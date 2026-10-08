@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INS SIG PLATFORM — Portail National Cartographique & SIG</title>
+  <meta name="description" content="INS SIG PLATFORM — Plateforme cartographique et Système d'Information Géographique officiel de l'Institut National de la Statistique (Tunisie).">
+  
+  <!-- Favicon officiel INS SVG -->
+  <link rel="icon" type="image/svg+xml" href="Logo%20INS.svg">
+  <link rel="alternate icon" href="favicon.svg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS (Local or CDN Fallback) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Leaflet Draw Plugin for Points, Polygons, Lines & Measurement -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+  <!-- Chart.js for Admin Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="styles.css?v=3.4.0">
+</head>
+<body>
+
+  <!-- Top App Navigation -->
+  <header class="app-header">
+    <div class="brand" id="brandHomeLink" title="INS SIG PLATFORM — Accueil">
+      <div class="ins-logo-badge ins-logo-badge-nav" title="Institut National de la Statistique">
+        <img src="Logo%20INS.svg" alt="Logo INS" class="ins-logo ins-logo-nav" onerror="this.onerror=null; this.src='logo-ins.svg';">
+      </div>
+      <div class="brand-text-block">
+        <div class="brand-title">INS SIG PLATFORM</div>
+        <div class="brand-subtitle">INS • Tunisie</div>
+      </div>
+      <span class="brand-badge">v1.0</span>
+    </div>
+
+    <nav class="nav-tabs" id="navTabs">
+      <button class="nav-tab-btn active" data-target="view-map" id="tabMapBtn">
+        <span>🗺️</span> Studio
+      </button>
+      <button class="nav-tab-btn" data-target="view-dashboard" id="tabDashBtn">
+        <span>📊</span> Dashboard
+      </button>
+      <button class="nav-tab-btn" data-target="view-providers" id="tabProvidersBtn">
+        <span>🛰️</span> Fournisseurs
+      </button>
+      <button class="nav-tab-btn" data-target="view-tokens" id="tabTokensBtn">
+        <span>🔑</span> Clés API
+      </button>
+      <button class="nav-tab-btn" data-target="view-audit" id="tabAuditBtn">
+        <span>🛡️</span> Sécurité
+      </button>
+      <button class="nav-tab-btn" data-target="view-seed" id="tabSeedBtn">
+        <span>📥</span> Hors-Ligne
+      </button>
+      <button class="nav-tab-btn" data-target="view-docs" id="tabDocsBtn">
+        <span>📖</span> OpenAPI
+      </button>
+      <button class="nav-tab-btn" data-target="view-users" id="tabUsersBtn">
+        <span>🔒</span> Mot de passe
+      </button>
+    </nav>
+
+    <div class="header-status">
+      <div class="health-pill" id="healthPill" title="Statut des services">
+        <span class="health-dot"></span>
+        <span id="healthStatusText">Opérationnel</span>
+      </div>
+      <button class="btn-theme-toggle" id="themeToggleBtn" title="Basculer Mode Clair / Sombre" aria-label="Basculer Mode Clair / Sombre">
+        <span id="themeToggleIcon">☀️</span>
+      </button>
+      <button class="btn-user-auth" id="userAuthBtn" title="Authentification INS">
+        <span id="userAvatar">🔐</span>
+        <span id="userLabel">Connexion</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="main-viewport">
+
+    <!-- ── 1. STUDIO CARTO INTERACTIF ──────────────────────────────────────── -->
+    <section class="view-section active" id="view-map">
+      <!-- Sidebar Controls -->
+      <aside class="map-sidebar">
+        <!-- Address Search / Geocoder -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Recherche d'adresse (Géocodage)</div>
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="geocodeInput" class="search-input" placeholder="Rechercher une ville, adresse, point..." autocomplete="off">
+            <div id="geocodeDropdown" class="search-dropdown"></div>
+          </div>
+        </div>
+
+        <!-- Styles & Providers -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">
+            <span>Fonds de Carte Disponibles</span>
+            <span class="badge badge-emerald" style="font-size: 9.5px; padding: 2px 7px;">100% Hors-Ligne</span>
+          </div>
+          <div class="style-grid" id="styleGrid">
+            <div class="style-card active" data-provider="esri-imagery" title="Image Satellite Haute Résolution Maxar/Esri — Téléchargé et vérifié">
+              <span class="style-icon">🛰️</span>
+              <div class="style-info">
+                <div class="style-name">Satellite HD (Esri)</div>
+                <div class="style-badge-offline"><span class="style-dot-green"></span>100% Hors-Ligne</div>
+              </div>
+            </div>
+            <div class="style-card" data-provider="esri-streets" title="Cartographie Urbaine & Réseau Routier Esri — Téléchargé et vérifié">
+              <span class="style-icon">🏙️</span>
+              <div class="style-info">
+                <div class="style-name">Plan Urbain (Esri)</div>
+                <div class="style-badge-offline"><span class="style-dot-green"></span>100% Hors-Ligne</div>
+              </div>
+            </div>
+            <div class="style-card" data-provider="esri-topo" title="Relief & Courbes de Niveau Topographiques Esri — Téléchargé et vérifié">
+              <span class="style-icon">⛰️</span>
+              <div class="style-info">
+                <div class="style-name">Relief Topo (Esri)</div>
+                <div class="style-badge-offline"><span class="style-dot-green"></span>100% Hors-Ligne</div>
+              </div>
+            </div>
+            <div class="style-card" data-provider="osm-standard" title="OpenStreetMap Mondial & Bâtiments Cadastraux — Téléchargé et vérifié">
+              <span class="style-icon">🗺️</span>
+              <div class="style-info">
+                <div class="style-name">OpenStreetMap</div>
+                <div class="style-badge-offline"><span class="style-dot-green"></span>100% Hors-Ligne</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sources Externes Cloud (Optionnelles / Non Téléchargées) -->
+          <div style="margin-top: 10px;">
+            <button type="button" class="btn btn-outline" id="btnToggleExternalProviders" style="width: 100%; justify-content: space-between; font-size: 11px; padding: 5px 8px; color: var(--text-dim);">
+              <span>🌐 Sources Externes Cloud (Clé API)</span>
+              <span id="externalProvidersArrow">▼</span>
+            </button>
+            <div id="externalProvidersContainer" style="display: none; margin-top: 8px; flex-direction: column; gap: 6px;">
+              <div class="style-card disabled-cloud-layer" data-provider="google-satellite" style="opacity: 0.65; cursor: pointer;" title="Nécessite GOOGLE_MAPS_API_KEY dans .env — Non pré-téléchargé">
+                <span class="style-icon">🛰️</span>
+                <div class="style-info">
+                  <div class="style-name">Google Maps Tile</div>
+                  <div style="color: var(--accent-amber); font-size: 9.5px;">🔒 Non téléchargé (Clé requise)</div>
+                </div>
+              </div>
+              <div class="style-card disabled-cloud-layer" data-provider="maptiler-satellite" style="opacity: 0.65; cursor: pointer;" title="Nécessite MAPTILER_API_KEY dans .env — Non pré-téléchargé">
+                <span class="style-icon">🌍</span>
+                <div class="style-info">
+                  <div class="style-name">MapTiler HD</div>
+                  <div style="color: var(--accent-amber); font-size: 9.5px;">🔒 Non téléchargé (Clé requise)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION ITINÉRAIRE MULTI-MODAL (VOITURE & PIÉTON) ──────────── -->
+        <div class="sidebar-section" id="routingSection">
+          <div class="sidebar-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>🧭 Calcul d'Itinéraire</span>
+            <span class="badge badge-cyan" id="routeModeBadge">Voiture</span>
+          </div>
+
+          <!-- Mode Selector (Voiture / Piéton / Vélo) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+            <button class="btn btn-mode active" id="btnModeCar" data-mode="car" style="padding: 6px 4px; font-size: 11.5px; justify-content: center;">
+              🚗 Voiture
+            </button>
+            <button class="btn btn-mode" id="btnModeFoot" data-mode="foot" style="padding: 6px 4px; font-size: 11.5px; justify-content: center;">
+              🚶 Piéton
+            </button>
+            <button class="btn btn-mode" id="btnModeBike" data-mode="bike" style="padding: 6px 4px; font-size: 11.5px; justify-content: center;">
+              🚲 Vélo
+            </button>
+          </div>
+
+          <!-- Inputs Départ & Arrivée -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Start Point -->
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <span style="color: #10B981; font-size: 13px; font-weight: bold; width: 18px; text-align: center;">A</span>
+              <input type="text" id="routeStartInput" class="form-control" placeholder="Départ (clic carte ou ville)..." style="font-size: 12px; padding: 6px 10px;">
+              <button class="btn btn-outline" id="btnPickStartOnMap" title="Cliquer sur la carte pour définir le départ" style="padding: 6px 8px; font-size: 12px;">📍</button>
+            </div>
+
+            <!-- End Point -->
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <span style="color: #F43F5E; font-size: 13px; font-weight: bold; width: 18px; text-align: center;">B</span>
+              <input type="text" id="routeEndInput" class="form-control" placeholder="Arrivée (clic carte ou ville)..." style="font-size: 12px; padding: 6px 10px;">
+              <button class="btn btn-outline" id="btnPickEndOnMap" title="Cliquer sur la carte pour définir l'arrivée" style="padding: 6px 8px; font-size: 12px;">🏁</button>
+            </div>
+
+            <!-- Actions Row -->
+            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 6px; margin-top: 4px;">
+              <button class="btn btn-primary" id="btnCalculateRoute" style="font-size: 12px; justify-content: center;">
+                ⚡ Calculer
+              </button>
+              <button class="btn btn-outline" id="btnSwapRoutePoints" title="Inverser départ et arrivée" style="padding: 6px 10px; font-size: 12px;">
+                ⇅
+              </button>
+              <button class="btn btn-outline" id="btnClearRoute" title="Effacer l'itinéraire" style="padding: 6px 10px; font-size: 12px; color: var(--accent-rose);">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <!-- Result Route Summary Box -->
+          <div id="routeResultsCard" class="route-results-panel" style="display: none; margin-top: 12px; border-radius: var(--radius-sm); padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Résultat d'Itinéraire</div>
+              <span id="routeCacheBadge" class="badge badge-emerald" style="font-size: 9.5px;">Direct</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+              <div style="background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); padding: 6px 8px; border-radius: 4px;">
+                <div style="font-size: 10px; color: var(--text-muted);">Distance</div>
+                <div id="routeDistanceVal" style="font-size: 15px; font-weight: 700; color: var(--accent-cyan);">-</div>
+              </div>
+              <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 6px 8px; border-radius: 4px;">
+                <div style="font-size: 10px; color: var(--text-muted);">Durée estimée</div>
+                <div id="routeDurationVal" style="font-size: 15px; font-weight: 700; color: var(--accent-emerald);">-</div>
+              </div>
+            </div>
+
+            <!-- Steps Toggle & List -->
+            <button class="btn btn-outline" id="btnToggleRouteSteps" style="width: 100%; justify-content: space-between; font-size: 11.5px; padding: 5px 8px;">
+              <span>📋 Feuille de route (<span id="routeStepsCount">0</span> étapes)</span>
+              <span id="routeStepsArrow">▼</span>
+            </button>
+            <div id="routeStepsContainer" style="display: none; margin-top: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px; font-size: 11px; border-top: 1px solid var(--border-subtle); padding-top: 6px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer Opacity & Settings -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Opacité du Calque Principal</div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="opacitySlider" min="0.1" max="1.0" step="0.05" value="1.0" style="flex: 1; accent-color: var(--accent-cyan);">
+            <span id="opacityVal" style="font-size: 13px; font-weight: 700; width: 40px;">100%</span>
+          </div>
+        </div>
+
+        <!-- Vector Import & Export -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Données Géospatiales</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label class="btn btn-outline" style="justify-content: center; cursor: pointer;">
+              <span>📁</span> Importer GeoJSON / KML
+              <input type="file" id="fileInput" accept=".geojson,.json,.kml" style="display: none;">
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button class="btn btn-outline" id="btnExportGeoJSON" style="font-size: 12px; justify-content: center;">
+                ⬇️ Export GeoJSON
+              </button>
+              <button class="btn btn-outline" id="btnExportStatic" style="font-size: 12px; justify-content: center;">
+                📷 Export Image
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Measurement & Stats -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Mesures & Géométries Actives</div>
+          <div id="measureBox" class="measure-box-panel" style="font-size: 12.5px; color: var(--text-muted); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            Utilisez les outils de dessin sur la carte pour mesurer distances et superficies.
+          </div>
+        </div>
+      </aside>
+
+      <!-- Map Canvas -->
+      <div id="map-container">
+        <!-- Floating Map Tools -->
+        <div class="map-floating-tools">
+          <button class="tool-btn" id="btnLocate" title="Ma position GPS (Localiser)">📍</button>
+          <button class="tool-btn" id="btnToggle3D" title="Basculer perspective 3D">🌐</button>
+          <button class="tool-btn" id="btnFullscreen" title="Plein écran">⛶</button>
+          <button class="tool-btn" id="btnShareUrl" title="Partager la vue par URL">🔗</button>
+        </div>
+
+        <!-- Map Footer Info Bar -->
+        <div class="map-info-bar">
+          <div id="mapCoords">Curseur : 36.8065°N, 10.1815°E | Zoom : 12</div>
+          <div id="mapAttribution">Tiles &copy; Esri & Contributors</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 2. DASHBOARD ADMINISTRATEUR ─────────────────────────────────────── -->
+    <section class="view-section" id="view-dashboard">
+      <!-- Period Selector & API Filter Bar -->
+      <div class="dash-controls-bar" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; background: rgba(15, 23, 42, 0.6); padding: 12px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Période :</span>
+          <div class="btn-group" id="periodBtnGroup" style="display: flex; gap: 4px;">
+            <button class="btn btn-outline period-btn" data-period="1h" style="padding: 4px 10px; font-size: 12px;">1 Heure</button>
+            <button class="btn btn-primary period-btn active" data-period="24h" style="padding: 4px 10px; font-size: 12px;">24 Heures</button>
+            <button class="btn btn-outline period-btn" data-period="7d" style="padding: 4px 10px; font-size: 12px;">7 Jours</button>
+            <button class="btn btn-outline period-btn" data-period="30d" style="padding: 4px 10px; font-size: 12px;">30 Jours</button>
+            <button class="btn btn-outline period-btn" data-period="all" style="padding: 4px 10px; font-size: 12px;">Tout l'historique</button>
+          </div>
+
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-left: 8px;">Filtrer par API :</span>
+          <select id="selectApiFilter" style="min-width: 220px; padding: 6px 12px; font-size: 12.5px; background: #0f172a; border: 1px solid var(--border-glass); color: #fff; border-radius: 6px; cursor: pointer;">
+            <option value="">🌐 Toutes les APIs (Global)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-outline" id="btnRefreshStats" style="padding: 5px 12px; font-size: 12px;">🔄 Actualiser</button>
+          <button class="btn btn-outline" id="btnExportStatsCsv" style="padding: 5px 12px; font-size: 12px;">⬇️ Export CSV</button>
+          <button class="btn btn-danger" id="btnResetStats" style="padding: 5px 12px; font-size: 12px; background: rgba(225, 29, 72, 0.2); border: 1px solid #f43f5e; color: #fda4af;">🗑️ Initialiser les Stats</button>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Volume Total d'Appels</span>
+            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">📈</div>
+          </div>
+          <div class="kpi-value" id="kpiTotalCalls">0</div>
+          <div class="kpi-sub" id="kpiCallsSub"><span style="color: var(--accent-emerald);">●</span> Temps réel (Dernières 24h)</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Taux de Cache Redis</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">⚡</div>
+          </div>
+          <div class="kpi-value" id="kpiCacheHitRate">0.0%</div>
+          <div class="kpi-sub" id="kpiCacheSub">Objectif SLA &gt; 80%</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Latence P95 / P99</span>
+            <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple);">⏱️</div>
+          </div>
+          <div class="kpi-value" id="kpiLatency">0 ms</div>
+          <div class="kpi-sub" id="kpiLatencySub">P95: 0ms | P99: 0ms</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Taux de Succès Global</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">🎯</div>
+          </div>
+          <div class="kpi-value" id="kpiSuccessRate">100%</div>
+          <div class="kpi-sub" id="kpiSuccessSub">Requêtes traitées avec succès</div>
+        </div>
+      </div>
+
+      <!-- Charts & Tables Grid -->
+      <div class="dashboard-grid">
+        <div class="dash-panel">
+          <div class="dash-panel-title">
+            <span>Évolution du Trafic Cartographique (Appels & Cache)</span>
+            <span class="badge badge-blue" id="badgeTrafficPeriod">24 Heures</span>
+          </div>
+          <div style="height: 280px;">
+            <canvas id="trafficChart"></canvas>
+          </div>
+        </div>
+
+        <div class="dash-panel">
+          <div class="dash-panel-title">Répartition par Code HTTP</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Statut</th>
+                <th>Nombre</th>
+              </tr>
+            </thead>
+            <tbody id="httpStatusTable">
+              <tr><td colspan="3" style="text-align: center; color: var(--text-dim);">Chargement des métriques...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── STATS DÉTAILLÉES PAR CLÉ D'API ── -->
+      <div class="dash-panel" style="margin-top: 20px;">
+        <div class="dash-panel-title">
+          <span>Consommation & Performance par Clé d'API (Applications Clientes)</span>
+          <span class="badge badge-emerald" id="badgeApiCount">Clés d'API</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Application / Clé</th>
+              <th>Préfixe</th>
+              <th>Statut</th>
+              <th>Appels (Période)</th>
+              <th>Succès</th>
+              <th>Erreurs</th>
+              <th>Cache Hits</th>
+              <th>Latence Moy.</th>
+              <th>Dernier Appel</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tokensUsageTable">
+            <tr><td colspan="10" style="text-align: center; color: var(--text-dim);">Chargement des statistiques par clé...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top Endpoints & Providers Grid -->
+      <div class="dashboard-grid" style="margin-top: 20px;">
+        <div class="dash-panel">
+          <div class="dash-panel-title">Consommation par Fournisseur Cartographique</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fournisseur</th>
+                <th>Appels Sollicités</th>
+                <th>Part du Trafic</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="providerUsageTable">
+              <tr><td colspan="4" style="text-align: center; color: var(--text-dim);">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dash-panel">
+          <div class="dash-panel-title">Top Endpoints Sollicités</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Volume</th>
+                <th>Latence Moy.</th>
+              </tr>
+            </thead>
+            <tbody id="topEndpointsTable">
+              <tr><td colspan="3" style="text-align: center; color: var(--text-dim);">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. GESTION DES FOURNISSEURS ─────────────────────────────────────── -->
+    <section class="view-section" id="view-providers" style="padding: 24px; overflow-y: auto;">
+      <div class="dash-panel" style="max-width: 1100px; margin: 0 auto; width: 100%;">
+        <div class="dash-panel-title">
+          <span>Gestion des Fournisseurs Cartographiques & Failover</span>
+          <span class="badge badge-blue">Circuit Breaker Actif</span>
+        </div>
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 20px;">
+          Basculez les calques, testez la latence de vos fournisseurs en direct, ajustez la priorité et prévoyez le basculement automatique en cas de panne.
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fournisseur</th>
+              <th>Type</th>
+              <th>Niveaux Zoom</th>
+              <th>Priorité</th>
+              <th>État Circuit</th>
+              <th>Santé</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="providersManagementTable">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Chargement des fournisseurs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── 4. CLÉS D'API & SÉCURITÉ ────────────────────────────────────────── -->
+    <section class="view-section" id="view-tokens" style="padding: 24px; overflow-y: auto;">
+      <div class="dash-panel" style="max-width: 1100px; margin: 0 auto; width: 100%;">
+        <div class="dash-panel-title">
+          <span>Jetons d'Accès API & Clés Personnelles</span>
+          <button class="btn btn-primary" id="btnOpenNewTokenModal">➕ Créer une Clé d'API</button>
+        </div>
+        <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid var(--border-glow); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 13px; line-height: 1.6; color: var(--text-muted);">
+          <strong style="color: var(--accent-cyan);">💡 Gestion & Sécurité des Clés d'API :</strong><br>
+          • <strong>Sécurité Zero-Knowledge :</strong> Seul le hachage SHA-256 est conservé sur le serveur. La clé complète vous est fournie <span style="color: #FFFFFF;">une seule fois</span> lors de sa création.<br>
+          • <strong>Désactivation à la volée :</strong> Utilisez le bouton <code>⏸️ Désactiver</code> pour suspendre immédiatement une clé sans perdre ses statistiques ou son historique.<br>
+          • <strong>Suppression définitive :</strong> Utilisez <code>🗑️ Supprimer</code> pour révoquer et purger définitivement la clé de la plateforme.
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Préfixe</th>
+              <th>Domaines Autorisés</th>
+              <th>Limite / Min</th>
+              <th>Quota Jour</th>
+              <th>Utilisation Jour</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tokensTable">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-dim);">Chargement des clés...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── 5. SÉCURITÉ & AUDIT ─────────────────────────────────────────────── -->
+    <section class="view-section" id="view-audit" style="padding: 24px; overflow-y: auto;">
+      <div class="dash-panel" style="max-width: 1100px; margin: 0 auto; width: 100%;">
+        <div class="dash-panel-title">
+          <span>Journal d'Audit de Sécurité & Événements</span>
+          <button class="btn btn-outline" id="btnRefreshAudit">🔄 Rafraîchir</button>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date / Heure</th>
+              <th>Action</th>
+              <th>Gravité</th>
+              <th>Utilisateur</th>
+              <th>Adresse IP</th>
+              <th>Détails</th>
+            </tr>
+          </thead>
+          <tbody id="auditTable">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Chargement du journal d'audit...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── 6. TÉLÉCHARGEMENT DES CARTES HORS-LIGNE (SEEDING AUTOMATIQUE) ── -->
+    <section class="view-section" id="view-seed" style="padding: 24px; overflow-y: auto;">
+      <div style="max-width: 1100px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- Header Banner -->
+        <div class="dash-panel">
+          <div class="dash-panel-title">
+            <span>📥 Téléchargement Automatique & Pré-Mise en Cache (Mode 100% Hors-Ligne)</span>
+            <span class="badge badge-green" id="seedStateHeaderBadge">Prêt</span>
+          </div>
+          <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.6;">
+            Pré-téléchargez les cartes satellite et plans urbains pour garantir une autonomie souveraine sur le terrain (tablettes CAPI, zones blanches). L'état d'avancement est sauvegardé en continu en base de données.
+          </p>
+        </div>
+
+        <!-- Download Control & Real-time Progress Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px;">
+          
+          <!-- Configuration Card -->
+          <div class="dash-panel">
+            <div class="dash-panel-title">Paramètres de Téléchargement</div>
+            
+            <div class="form-group">
+              <label class="form-label">Calque Cartographique</label>
+              <!-- Hidden native select for JS compatibility -->
+              <select id="seedLayerSelect" style="display:none;">
+                <option value="esri-imagery">🛰️ Satellite HD (Esri World Imagery)</option>
+                <option value="esri-streets">🏙️ Plan Urbain &amp; Rues (Esri Streets)</option>
+                <option value="esri-topo">⛰️ Relief &amp; Topographie (Esri Topo)</option>
+                <option value="osm-standard">🗺️ OpenStreetMap Standard</option>
+              </select>
+              <!-- Custom Dropdown -->
+              <div class="carto-dropdown" id="layerDropdown">
+                <div class="carto-dropdown-trigger" id="layerDropdownTrigger">
+                  <span id="layerDropdownLabel">🛰️ Satellite HD (Esri World Imagery)</span>
+                  <svg class="carto-dropdown-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="carto-dropdown-menu" id="layerDropdownMenu">
+                  <div class="carto-dropdown-item active" data-value="esri-imagery">🛰️ Satellite HD (Esri World Imagery)</div>
+                  <div class="carto-dropdown-item" data-value="esri-streets">🏙️ Plan Urbain &amp; Rues (Esri Streets)</div>
+                  <div class="carto-dropdown-item" data-value="esri-topo">⛰️ Relief &amp; Topographie (Esri Topo)</div>
+                  <div class="carto-dropdown-item" data-value="osm-standard">🗺️ OpenStreetMap Standard</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Niveaux de Zoom (Couverture)</label>
+              <!-- Hidden native select for JS compatibility -->
+              <select id="seedZoomSelect" style="display:none;">
+                <option value="6-11">Zoom 6 à 11 — Vue Régionale (~1 500 tuiles / ~30 Mo - Rapide)</option>
+                <option value="6-13" selected>Zoom 6 à 13 — Vue Urbaine Détaillée (~25 206 tuiles / ~500 Mo - Recommandé)</option>
+                <option value="6-14">Zoom 6 à 14 — Haute Précision Rues (~100 000 tuiles / ~2 Go)</option>
+              </select>
+              <!-- Custom Dropdown -->
+              <div class="carto-dropdown" id="zoomDropdown">
+                <div class="carto-dropdown-trigger" id="zoomDropdownTrigger">
+                  <span id="zoomDropdownLabel">🎯 Zoom 6→13 — Vue Urbaine (~25 206 tuiles / ~500 Mo)</span>
+                  <svg class="carto-dropdown-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="carto-dropdown-menu" id="zoomDropdownMenu">
+                  <div class="carto-dropdown-item" data-value="6-11">
+                    <div class="carto-dd-title">⚡ Vue Régionale — Zoom 6 → 11</div>
+                    <div class="carto-dd-sub">~1 500 tuiles • ~30 Mo • Téléchargement rapide</div>
+                  </div>
+                  <div class="carto-dropdown-item active" data-value="6-13">
+                    <div class="carto-dd-title">✅ Vue Urbaine Détaillée — Zoom 6 → 13 <span class="carto-dd-badge">Recommandé</span></div>
+                    <div class="carto-dd-sub">~25 206 tuiles • ~500 Mo • Couverture nationale complète</div>
+                  </div>
+                  <div class="carto-dropdown-item" data-value="6-14">
+                    <div class="carto-dd-title">🔍 Haute Précision Rues — Zoom 6 → 14</div>
+                    <div class="carto-dd-sub">~100 000 tuiles • ~2 Go • Niveau maison/rue</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 16px;">
+              <input type="checkbox" id="seedOverwriteChk" style="width: 16px; height: 16px; accent-color: var(--accent-cyan); cursor: pointer;">
+              <label for="seedOverwriteChk" style="font-size: 13px; color: var(--text-main); cursor: pointer;">
+                Forcer le re-téléchargement des tuiles déjà en cache
+              </label>
+            </div>
+
+            <!-- Action Buttons Group -->
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;">
+              <button class="btn btn-primary" id="btnSeedStart" style="justify-content: center; font-size: 14px; padding: 12px;">
+                🚀 Lancer le Téléchargement
+              </button>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="btn btn-outline" id="btnSeedPause" style="justify-content: center;" disabled>
+                  ⏸️ Mettre en Pause
+                </button>
+                <button class="btn btn-danger" id="btnSeedStop" style="justify-content: center;" disabled>
+                  ⏹️ Arrêter
+                </button>
+              </div>
+
+              <button class="btn btn-outline" id="btnSeedPurge" style="justify-content: center; font-size: 12px; color: var(--text-dim); margin-top: 6px;">
+                🗑️ Purger le Cache de ce Calque
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Progress Card -->
+          <div class="dash-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="dash-panel-title">
+                <span>Avancement en Temps Réel</span>
+                <span class="badge badge-blue" id="seedCurrentZoomBadge">Zoom : -</span>
+              </div>
+
+              <div style="text-align: center; margin: 24px 0 16px 0;">
+                <div style="font-size: 52px; font-weight: 800; letter-spacing: -1px; color: var(--text-main);" id="seedPercentDisplay">
+                  0.0%
+                </div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;" id="seedStatusDesc">
+                  Prêt à démarrer
+                </div>
+              </div>
+
+              <!-- Animated Progress Bar -->
+              <div class="seed-progress-track" style="width: 100%; height: 14px; border-radius: 999px; overflow: hidden; border: 1px solid var(--border-subtle); position: relative; margin-bottom: 20px;">
+                <div id="seedProgressBarFill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-emerald)); border-radius: 999px; transition: width 0.3s ease; box-shadow: 0 0 14px rgba(6, 182, 212, 0.6);"></div>
+              </div>
+
+              <!-- Metrics Stats Grid -->
+              <div class="seed-stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <div>
+                  <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Tuiles Téléchargées</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-top: 2px;" id="seedTilesCounter">0 / 0</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Vitesse Moyenne</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--accent-cyan); margin-top: 2px;" id="seedSpeedDisplay">0 t/s</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Cache Hits (Redis)</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--accent-emerald); margin-top: 2px;" id="seedHitsDisplay">0</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 11.5px; color: var(--text-dim); margin-top: 16px; text-align: center;">
+              🔒 Les tuiles téléchargées sont persistées sur le volume Docker et survivent aux redémarrages.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Persistent Layers Summary Table -->
+        <div class="dash-panel">
+          <div class="dash-panel-title">État d'Avancement Sauvegardé par Calque</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Calque Cartographique</th>
+                <th>Volume Téléchargé</th>
+                <th>Progression</th>
+                <th>Statut Hors-Ligne</th>
+                <th>Action Rapide</th>
+              </tr>
+            </thead>
+            <tbody id="seedLayersSummaryTable">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-dim);">Chargement de l'état des calques...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── 7. OPENAPI SWAGGER ──────────────────────────────────────────────── -->
+
+    <!-- ── 8. OPENAPI SWAGGER ──────────────────────────────────────────────── -->
+    <section class="view-section" id="view-docs">
+      <iframe src="/api/docs" style="width: 100%; height: 100%; border: none;"></iframe>
+    </section>
+
+    <!-- ── 9. MOT DE PASSE DU COMPTE ADMINISTRATEUR ─────────────────────────── -->
+    <section class="view-section" id="view-users">
+      <div class="dash-container" style="max-width: 960px; margin: 0 auto; padding: 28px 20px;">
+        
+        <!-- Header Banner -->
+        <div class="dash-header" style="margin-bottom: 28px;">
+          <div>
+            <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--accent-cyan); background: rgba(0, 97, 173, 0.12); padding: 5px 12px; border-radius: 999px; margin-bottom: 8px; border: 1px solid rgba(0, 97, 173, 0.25);">
+              <span>🔐</span> SÉCURITÉ DE LA PLATEFORME
+            </div>
+            <h2 class="dash-title" style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Gestion du Mot de Passe</h2>
+            <p class="dash-subtitle" style="font-size: 13.5px; color: var(--text-muted);">
+              Mise à jour sécurisée des identifiants du compte administrateur INS
+            </p>
+          </div>
+        </div>
+
+        <div id="usersGlobalFeedback" class="alert-box" style="display: none; margin-bottom: 24px;"></div>
+
+        <!-- Two Columns Layout: Form on Left, Security Details on Right -->
+        <div class="password-page-grid" style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: start;">
+          
+          <!-- Column 1: Password Form Card -->
+          <div class="dash-panel password-card" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-md);">
+            <div class="dash-panel-title" style="font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;">
+              <span>🔑</span> Modifier le Mot de Passe
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.5;">
+              Pour protéger l'accès au portail SIG, veuillez entrer votre mot de passe actuel puis définir votre nouveau mot de passe.
+            </p>
+
+            <form id="changePasswordForm">
+              <div class="form-group" style="margin-bottom: 18px;">
+                <label class="form-label" for="oldPasswordInput" style="font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block;">Ancien mot de passe</label>
+                <div class="input-with-icon" style="position: relative;">
+                  <span class="field-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-muted);">🔒</span>
+                  <input type="password" id="oldPasswordInput" class="form-control" style="padding-left: 42px; padding-right: 42px;" placeholder="Saisissez l'ancien mot de passe" required>
+                  <button type="button" class="btn-toggle-pwd" data-target="oldPasswordInput" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 15px;" title="Afficher/Masquer">👁️</button>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 18px;">
+                <label class="form-label" for="newPasswordInput" style="font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block;">Nouveau mot de passe</label>
+                <div class="input-with-icon" style="position: relative;">
+                  <span class="field-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-muted);">✨</span>
+                  <input type="password" id="newPasswordInput" class="form-control" style="padding-left: 42px; padding-right: 42px;" placeholder="Au moins 6 caractères" required minlength="6">
+                  <button type="button" class="btn-toggle-pwd" data-target="newPasswordInput" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 15px;" title="Afficher/Masquer">👁️</button>
+                </div>
+                <!-- Strength Indicator -->
+                <div class="pwd-strength-container" style="margin-top: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: var(--text-muted);">
+                    <span>Force du mot de passe :</span>
+                    <strong id="pwdStrengthLabel" style="color: var(--text-muted);">À renseigner</strong>
+                  </div>
+                  <div class="strength-bar-bg" style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden;">
+                    <div id="pwdStrengthBar" style="height: 100%; width: 0%; transition: all 0.3s ease; background: var(--accent-amber);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label" for="confirmPasswordInput" style="font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block;">Confirmer le nouveau mot de passe</label>
+                <div class="input-with-icon" style="position: relative;">
+                  <span class="field-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-muted);">🛡️</span>
+                  <input type="password" id="confirmPasswordInput" class="form-control" style="padding-left: 42px; padding-right: 42px;" placeholder="Retapez le nouveau mot de passe" required minlength="6">
+                  <button type="button" class="btn-toggle-pwd" data-target="confirmPasswordInput" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 15px;" title="Afficher/Masquer">👁️</button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnSubmitChangePassword" style="font-weight: 700; font-size: 14px; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>💾</span> Enregistrer le nouveau mot de passe
+              </button>
+            </form>
+          </div>
+
+          <!-- Column 2: Account Overview & Best Practices -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- Current Account Status Card -->
+            <div class="dash-panel" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-sm);">
+              <div style="font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                <span>👤</span> Compte Actif
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                  <span style="color: var(--text-muted);">Identifiant :</span>
+                  <strong style="color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;">adminCarto</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                  <span style="color: var(--text-muted);">Rôle :</span>
+                  <span class="badge badge-emerald">Super Administrateur</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                  <span style="color: var(--text-muted);">Système :</span>
+                  <span style="color: var(--text-main); font-weight: 600;">INS SIG Platform</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-muted);">Hachage :</span>
+                  <span style="color: var(--accent-emerald); font-weight: 600;">Argon2id (Sécurisé)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Security Recommendations Card -->
+            <div class="dash-panel" style="background: rgba(0, 97, 173, 0.07); border: 1px solid rgba(0, 97, 173, 0.25); border-radius: var(--radius-lg); padding: 22px;">
+              <div style="font-size: 14px; font-weight: 700; color: var(--accent-cyan); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>💡</span> Règles de sécurité
+              </div>
+              <ul style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6; padding-left: 18px; margin: 0;">
+                <li>Longueur minimale : <strong>6 caractères</strong> (8 ou plus recommandés).</li>
+                <li>Combinez majuscules (A-Z), minuscules (a-z) et chiffres (0-9).</li>
+                <li>Incluez au moins un caractère spécial (@, #, !, $, etc.).</li>
+                <li>Conservez ce mot de passe en lieu sûr et confidentiel.</li>
+              </ul>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: Création de Clé d'API -->
+  <div class="modal-overlay" id="newTokenModal">
+    <div class="modal-content">
+      <div class="modal-title">Générer une Nouvelle Clé d'API</div>
+      <form id="createTokenForm">
+        <div class="form-group">
+          <label class="form-label">Nom descriptif / Application cliente</label>
+          <input type="text" id="tokenNameInput" class="form-control" placeholder="ex: Application Mobile Enquêteurs" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Domaines autorisés (CORS / Referer) - séparés par des virgules</label>
+          <input type="text" id="tokenDomainsInput" class="form-control" placeholder="ex: https://monsite.tn, localhost">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Limite de débit (requêtes par minute)</label>
+          <input type="number" id="tokenRateLimitInput" class="form-control" value="120" min="10" max="5000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quota journalier de tuiles</label>
+          <input type="number" id="tokenQuotaInput" class="form-control" value="50000" min="100">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+          <button type="button" class="btn btn-outline" id="btnCancelTokenModal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Générer la Clé</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Affichage Unique du Secret (One-time Reveal) -->
+  <div class="modal-overlay" id="secretRevealModal">
+    <div class="modal-content">
+      <div class="modal-title" style="color: var(--accent-emerald);">🔑 Clé d'API Générée avec Succès</div>
+      <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;">
+        <strong style="color: var(--accent-rose);">ATTENTION :</strong> Copiez cette clé secrète maintenant. Pour des raisons de sécurité, elle est hachée dans la base de données et ne pourra <strong style="color: #FFFFFF;">JAMAIS</strong> être réaffichée par la suite.
+      </p>
+      <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--accent-emerald); padding: 12px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace; font-size: 14px; word-break: break-all; margin-bottom: 12px; color: #FFFFFF;" id="revealedSecretText">
+        cpt_live_...
+      </div>
+      <div style="background: rgba(6, 182, 212, 0.08); border-left: 3px solid var(--accent-cyan); padding: 10px 14px; margin-bottom: 20px; border-radius: 4px; font-size: 12px; color: var(--text-muted);">
+        <strong style="color: var(--text-main);">Exemple d'URL pour vos applications clientes (Leaflet / QGIS / Mobile) :</strong><br>
+        <code id="revealedSecretUrl" style="color: var(--accent-cyan); word-break: break-all; display: inline-block; margin-top: 4px;">http://localhost:8085/api/tiles/esri-imagery/{z}/{x}/{y}.png?key=...</code>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-primary" id="btnCopySecret">📋 Copier la Clé</button>
+        <button type="button" class="btn btn-outline" id="btnCloseSecretModal">J'ai copié ma clé</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERFACE DE CONNEXION PRINCIPALE (AFFICHEE PAR DEFAUT A L'OUVERTURE DE L'URL) -->
+  <div class="login-fullpage-wrapper" id="loginScreen">
+    <div class="login-box-card">
+      <div class="login-brand-header">
+        <div class="ins-logo-badge ins-logo-badge-login" title="Institut National de la Statistique">
+          <img src="Logo%20INS.svg" alt="Logo INS" class="ins-logo ins-logo-login" onerror="this.onerror=null; this.src='logo-ins.svg';">
+        </div>
+        <h2 class="login-app-title">INS SIG PLATFORM</h2>
+        <p class="login-app-desc">Portail Cartographique & Passerelle API Sécurisée</p>
+        <div class="login-gov-badge">
+          <span>🇹🇳 République Tunisienne — Institut National de la Statistique</span>
+        </div>
+      </div>
+
+      <form id="loginForm" class="login-form-body">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Identifiant administrateur</label>
+          <div class="input-with-icon">
+            <span class="field-icon">👤</span>
+            <input type="text" id="loginEmail" class="form-control" required placeholder="Identifiant" autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Mot de passe</label>
+          <div class="input-with-icon">
+            <span class="field-icon">🔒</span>
+            <input type="password" id="loginPassword" class="form-control" required placeholder="••••••••••••" autocomplete="current-password">
+          </div>
+        </div>
+
+        <div id="loginFeedback" class="alert-box" style="display: none; margin-bottom: 16px;"></div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitLoginBtn" style="font-weight: 700; font-size: 15px; padding: 14px;">
+          <span>🚀</span> Se connecter à la plateforme
+        </button>
+      </form>
+
+      <div class="login-card-footer" style="margin-top: 24px; text-align: center; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+        <span>INS Tunisie</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js?v=3.5.0"></script>
+</body>
+</html>

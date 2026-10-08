@@ -1,0 +1,3 @@
+cd carto_platform
+chmod +x install_ubuntu.sh
+./install_ubuntu.sh

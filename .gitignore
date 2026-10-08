@@ -1,0 +1,58 @@
+# ==============================================================================
+# CartoPlatform - .gitignore
+# ==============================================================================
+
+# Secrets, mots de passe et clés d'API (CRITIQUE : Ne jamais commiter !)
+.env
+.env.local
+.env.production
+login_password.txt
+CREDENTIALS.md
+*.pem
+*.key
+*.cert
+*.crt
+
+# Fichiers de log et rapports d'exécution
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+auto_pilot.log
+progress_status.json
+
+# Caches volumineux et tuiles binaires
+cache_osm/
+tiles/
+osm_tiles/
+*.tar
+*.tar.gz
+*.zip
+
+# Dépendances Node.js / Python
+node_modules/
+npm-packages-offline-semaphore/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Données temporaires et scratch
+scratch/
+tmp/
+temp/
+.cache/
+
+# Fichiers système et IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Builds
+dist/
+build/

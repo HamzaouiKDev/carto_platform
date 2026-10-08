@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>INS SIG Platform — Présentation Architecture & Fonctionnalités</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+    @page {
+      size: 1920px 1080px;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+      background: #090e1a;
+      color: #f8fafc;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .slide {
+      width: 1920px;
+      height: 1080px;
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 60px 80px;
+      background: radial-gradient(circle at 15% 20%, #131d36 0%, #090e1a 100%);
+    }
+
+    /* Décorations de fond */
+    .bg-glow-cyan {
+      position: absolute;
+      top: -150px;
+      right: -150px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0, 180, 216, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .bg-glow-blue {
+      position: absolute;
+      bottom: -150px;
+      left: -150px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* En-tête des slides */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 24px;
+    }
+
+    .slide-tag {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 700;
+      color: #00b4d8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .slide-title {
+      font-size: 38px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .slide-subtitle {
+      font-size: 18px;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+
+    .slide-logo-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Pied de page */
+    .slide-footer {
+      position: absolute;
+      bottom: 30px;
+      left: 80px;
+      right: 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: #64748b;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 16px;
+    }
+
+    /* ── SLIDE 1 : COUVERTURE ────────────────────────────────────────────── */
+    .cover-slide {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0 160px;
+    }
+
+    .cover-badge {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(0, 180, 216, 0.2));
+      border: 1px solid rgba(0, 180, 216, 0.4);
+      color: #38bdf8;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 10px 24px;
+      border-radius: 999px;
+      margin-bottom: 28px;
+      display: inline-block;
+    }
+
+    .cover-title {
+      font-size: 64px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+
+    .cover-title span {
+      background: linear-gradient(135deg, #00b4d8 0%, #38bdf8 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover-sub {
+      font-size: 24px;
+      color: #94a3b8;
+      max-width: 900px;
+      line-height: 1.5;
+      margin-bottom: 50px;
+    }
+
+    .cover-tags {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .cover-tag-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Grilles et Cartes */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      flex: 1;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      flex: 1;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .card-desc {
+      font-size: 16px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* Schéma SVG stylisé */
+    .schema-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* Tableau stylé */
+    .table-compare {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+    }
+
+    .table-compare th {
+      text-align: left;
+      padding: 16px 24px;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .table-compare td {
+      padding: 18px 24px;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+    }
+
+    .table-compare tr td:first-child {
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      border-top-left-radius: 12px;
+      border-bottom-left-radius: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .table-compare tr td:last-child {
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      border-top-right-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    .pill-open {
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(2, 132, 199, 0.35);
+      color: #38bdf8;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-custom {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 1 : COUVERTURE
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide cover-slide">
+    <div class="bg-glow-cyan"></div>
+    <div class="bg-glow-blue"></div>
+
+    <div class="cover-badge">Institut National de la Statistique — Direction Informatique</div>
+    <h1 class="cover-title">Plateforme <span>SIG Souveraine</span> & Services Géospatiaux</h1>
+    <p class="cover-sub">
+      Architecture technique, services de cartographie haute performance, moteur d'itinéraires et stratégie hors-ligne pour les tablettes d'enquêteurs terrain.
+    </p>
+
+    <div class="cover-tags">
+      <div class="cover-tag-item"><span>🏛️</span> 100% Souverain & Local</div>
+      <div class="cover-tag-item"><span>📱</span> Support Tablettes Offline</div>
+      <div class="cover-tag-item"><span>⚡</span> Cache Redis (< 2 ms)</div>
+      <div class="cover-tag-item"><span>🔒</span> Clés API & Sécurité M2M</div>
+      <div class="cover-tag-item"><span>🐳</span> Micro-services Docker</div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Présentation Technique pour l'Équipe Informatique</span>
+      <span>INS Tunisie &bull; Version 1.0 &bull; 2026</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 2 : OBJECTIFS & VISION ARCHITECTURALE
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag"><span>🎯</span> Contexte & Vision</div>
+        <div class="slide-title">Pourquoi cette Plateforme ? Les 3 Enjeux Clés</div>
+        <div class="slide-subtitle">Répondre aux défis opérationnels du recensement et des enquêtes nationales</div>
+      </div>
+      <div class="slide-logo-badge">INS SIG PLATFORM</div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card" style="border-top: 4px solid #00b4d8;">
+        <div class="card-icon" style="background: rgba(0, 180, 216, 0.15); color: #00b4d8;">🏛️</div>
+        <div class="card-title">1. Souveraineté & Zéro Dépendance</div>
+        <div class="card-desc">
+          Les API publiques (Google Maps, Mapbox) imposent des coûts élevés, des restrictions d'usage et des risques de blocage sur réseau interne.<br><br>
+          <strong style="color: #fff;">Solution conçue :</strong> Une infrastructure 100% locale, hébergée sur nos serveurs INS, garantissant la maîtrise absolue des flux cartographiques et des données statistiques.
+        </div>
+      </div>
+
+      <div class="card" style="border-top: 4px solid #10b981;">
+        <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">📱</div>
+        <div class="card-title">2. Mobilité & Mode Hors-Ligne</div>
+        <div class="card-desc">
+          Sur le terrain, les enquêteurs doivent collecter des données auprès des ménages dans des zones blanches sans connexion réseau 4G.<br><br>
+          <strong style="color: #fff;">Solution conçue :</strong> Un moteur de pré-chargement (seeding) permettant de télécharger la cartographie complète d'un gouvernorat (~1.5 Go) en Wi-Fi avant départ en tournée.
+        </div>
+      </div>
+
+      <div class="card" style="border-top: 4px solid #8b5cf6;">
+        <div class="card-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">⚡</div>
+        <div class="card-title">3. Performance & Haute Disponibilité</div>
+        <div class="card-desc">
+          Lors des campagnes nationales, des centaines de tablettes sollicitent simultanément des millions de tuiles cartographiques.<br><br>
+          <strong style="color: #fff;">Solution conçue :</strong> Une passerelle API intelligente adossée à un cache mémoire Redis ultra-rapide capable de servir chaque tuile en moins de 2 millisecondes.
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Architecture & Vision</span>
+      <span>Slide 2 / 8</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 3 : GRAND SCHÉMA D'ARCHITECTURE DU SYSTÈME (SVG HAUTE DÉFINITION)
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag"><span>📐</span> Architecture Système</div>
+        <div class="slide-title">Schéma d'Architecture Micro-Services Conteneurisée</div>
+        <div class="slide-subtitle">Interconnexion des composants logiciels orchestrés avec Docker</div>
+      </div>
+      <div class="slide-logo-badge">DOCKER ORCHESTRATION</div>
+    </div>
+
+    <div class="schema-container">
+      <svg width="1760" height="720" viewBox="0 0 1760 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+        
+        <!-- ZONE 1 : CLIENTS / TABLETTES -->
+        <rect x="40" y="60" width="340" height="600" rx="20" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+        <text x="70" y="105" fill="#38bdf8" font-size="20" font-weight="700" font-family="Outfit">1. COUCHE CLIENTS</text>
+        <text x="70" y="130" fill="#64748b" font-size="14" font-family="Inter">Tablettes Enquêteurs & Applications</text>
+
+        <!-- Tablette 1 -->
+        <rect x="70" y="160" width="280" height="130" rx="14" fill="#131c31" stroke="rgba(0,180,216,0.3)" stroke-width="1.5"/>
+        <text x="95" y="195" fill="#fff" font-size="18" font-weight="600" font-family="Outfit">📱 Tablettes Enquêteurs CAPI</text>
+        <text x="95" y="225" fill="#94a3b8" font-size="13" font-family="Inter">• Application locale (IndexedDB / SQLite)</text>
+        <text x="95" y="248" fill="#94a3b8" font-size="13" font-family="Inter">• Cache local gouvernorat (~1.5 Go)</text>
+        <text x="95" y="271" fill="#10b981" font-size="13" font-weight="600" font-family="Inter">✓ 100% Fonctionnel Offline</text>
+
+        <!-- Web GIS Studio -->
+        <rect x="70" y="320" width="280" height="130" rx="14" fill="#131c31" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+        <text x="95" y="355" fill="#fff" font-size="18" font-weight="600" font-family="Outfit">💻 Studio SIG Web (Carto)</text>
+        <text x="95" y="385" fill="#94a3b8" font-size="13" font-family="Inter">• Visualisation thématique des ménages</text>
+        <text x="95" y="408" fill="#94a3b8" font-size="13" font-family="Inter">• Suivi avancement des enquêtes</text>
+        <text x="95" y="431" fill="#38bdf8" font-size="13" font-weight="600" font-family="Inter">✓ Accès sécurisé SSL/TLS</text>
+
+        <!-- Application Test Standalone -->
+        <rect x="70" y="480" width="280" height="140" rx="14" fill="#131c31" stroke="rgba(245,158,11,0.3)" stroke-width="1.5"/>
+        <text x="95" y="515" fill="#fff" font-size="18" font-weight="600" font-family="Outfit">🗺️ App Test Ménages</text>
+        <text x="95" y="545" fill="#94a3b8" font-size="13" font-family="Inter">• Standalone hors serveur (file://)</text>
+        <text x="95" y="568" fill="#94a3b8" font-size="13" font-family="Inter">• Cercles dynamiques & Itinéraires</text>
+        <text x="95" y="591" fill="#f59e0b" font-size="13" font-weight="600" font-family="Inter">✓ Clé API cpt_live_... intégrée</text>
+
+        <!-- FLECHE 1 ➔ 2 -->
+        <path d="M 380 380 L 460 380" stroke="#00b4d8" stroke-width="3" stroke-dasharray="6 6"/>
+        <polygon points="460,375 475,380 460,385" fill="#00b4d8"/>
+        <text x="390" y="365" fill="#00b4d8" font-size="12" font-weight="700" font-family="Inter">HTTP / HTTPS</text>
+
+        <!-- ZONE 2 : REVERSE PROXY NGINX -->
+        <rect x="480" y="60" width="280" height="600" rx="20" fill="rgba(2,132,199,0.04)" stroke="rgba(2,132,199,0.25)" stroke-width="2"/>
+        <text x="510" y="105" fill="#38bdf8" font-size="20" font-weight="700" font-family="Outfit">2. REVERSE PROXY</text>
+        <text x="510" y="130" fill="#64748b" font-size="14" font-family="Inter">Passerelle Nginx 1.27</text>
+
+        <rect x="510" y="170" width="220" height="450" rx="14" fill="#0f172a" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+        <text x="535" y="215" fill="#fff" font-size="18" font-weight="700" font-family="Outfit">🛡️ NGINX GATEWAY</text>
+        
+        <circle cx="545" cy="265" r="5" fill="#10b981"/>
+        <text x="560" y="270" fill="#e2e8f0" font-size="14" font-family="Inter">Ports 80 & 443 (HTTPS)</text>
+
+        <circle cx="545" cy="315" r="5" fill="#10b981"/>
+        <text x="560" y="320" fill="#e2e8f0" font-size="14" font-family="Inter">Certificat SSL 4096-bit</text>
+
+        <circle cx="545" cy="365" r="5" fill="#10b981"/>
+        <text x="560" y="370" fill="#e2e8f0" font-size="14" font-family="Inter">Rate Limiting anti-DDoS</text>
+        <text x="560" y="390" fill="#94a3b8" font-size="12" font-family="Inter">(60 r/s API · 300 r/s Tuiles)</text>
+
+        <circle cx="545" cy="435" r="5" fill="#10b981"/>
+        <text x="560" y="440" fill="#e2e8f0" font-size="14" font-family="Inter">Headers de Sécurité</text>
+        <text x="560" y="460" fill="#94a3b8" font-size="12" font-family="Inter">(HSTS, X-Frame, CORS)</text>
+
+        <circle cx="545" cy="505" r="5" fill="#10b981"/>
+        <text x="560" y="510" fill="#e2e8f0" font-size="14" font-family="Inter">Compression Gzip</text>
+
+        <circle cx="545" cy="555" r="5" fill="#10b981"/>
+        <text x="560" y="560" fill="#e2e8f0" font-size="14" font-family="Inter">Routing Port 4000</text>
+
+        <!-- FLECHE 2 ➔ 3 -->
+        <path d="M 760 380 L 840 380" stroke="#00b4d8" stroke-width="3" stroke-dasharray="6 6"/>
+        <polygon points="840,375 855,380 840,385" fill="#00b4d8"/>
+        <text x="770" y="365" fill="#00b4d8" font-size="12" font-weight="700" font-family="Inter">Proxy Pass</text>
+
+        <!-- ZONE 3 : API GATEWAY NODE.JS -->
+        <rect x="860" y="60" width="380" height="600" rx="20" fill="rgba(16,185,129,0.04)" stroke="rgba(16,185,129,0.25)" stroke-width="2"/>
+        <text x="890" y="105" fill="#34d399" font-size="20" font-weight="700" font-family="Outfit">3. COEUR APPLICATIF</text>
+        <text x="890" y="130" fill="#64748b" font-size="14" font-family="Inter">API Gateway Node.js 20 Express (Sur-mesure)</text>
+
+        <!-- Brique Tuiles -->
+        <rect x="890" y="160" width="320" height="100" rx="12" fill="#131c31" stroke="rgba(0,180,216,0.3)" stroke-width="1.5"/>
+        <text x="915" y="195" fill="#fff" font-size="16" font-weight="700" font-family="Outfit">🗺️ Proxy Intelligent de Tuiles</text>
+        <text x="915" y="220" fill="#94a3b8" font-size="13" font-family="Inter">Standard XYZ / Slippy Map</text>
+        <text x="915" y="240" fill="#38bdf8" font-size="12" font-family="Inter">Multi-providers : Rues, Satellite, Topo</text>
+
+        <!-- Brique Auth -->
+        <rect x="890" y="280" width="320" height="100" rx="12" fill="#131c31" stroke="rgba(16,185,129,0.3)" stroke-width="1.5"/>
+        <text x="915" y="315" fill="#fff" font-size="16" font-weight="700" font-family="Outfit">🔐 Gestionnaire Clés API (M2M)</text>
+        <text x="915" y="340" fill="#94a3b8" font-size="13" font-family="Inter">Vérification tokens cpt_live_... (SHA-256)</text>
+        <text x="915" y="360" fill="#34d399" font-size="12" font-family="Inter">Quotas journaliers & révocation immédiate</text>
+
+        <!-- Brique Routing -->
+        <rect x="890" y="400" width="320" height="100" rx="12" fill="#131c31" stroke="rgba(245,158,11,0.3)" stroke-width="1.5"/>
+        <text x="915" y="435" fill="#fff" font-size="16" font-weight="700" font-family="Outfit">🧭 Moteur d'Itinéraires Local</text>
+        <text x="915" y="460" fill="#94a3b8" font-size="13" font-family="Inter">Calcul multi-modal (Voiture, Piéton, Vélo)</text>
+        <text x="915" y="480" fill="#f59e0b" font-size="12" font-family="Inter">Génération feuille de route pas-à-pas en FR</text>
+
+        <!-- Brique Offline Seeding -->
+        <rect x="890" y="520" width="320" height="100" rx="12" fill="#131c31" stroke="rgba(139,92,246,0.3)" stroke-width="1.5"/>
+        <text x="915" y="555" fill="#fff" font-size="16" font-weight="700" font-family="Outfit">💾 Moteur de Pré-chargement (Seed)</text>
+        <text x="915" y="580" fill="#94a3b8" font-size="13" font-family="Inter">Téléchargement par Bounding Box</text>
+        <text x="915" y="600" fill="#a78bfa" font-size="12" font-family="Inter">Alimentation des caches tablettes offline</text>
+
+        <!-- FLECHES 3 ➔ 4 -->
+        <path d="M 1240 210 L 1320 210" stroke="#f59e0b" stroke-width="3"/>
+        <polygon points="1320,205 1335,210 1320,215" fill="#f59e0b"/>
+
+        <path d="M 1240 450 L 1320 450" stroke="#38bdf8" stroke-width="3"/>
+        <polygon points="1320,445 1335,450 1320,455" fill="#38bdf8"/>
+
+        <!-- ZONE 4 : DONNEES, CACHE & SUPERVISION -->
+        <rect x="1340" y="60" width="380" height="600" rx="20" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+        <text x="1370" y="105" fill="#e2e8f0" font-size="20" font-weight="700" font-family="Outfit">4. PERSISTANCE & MOTEURS</text>
+        <text x="1370" y="130" fill="#64748b" font-size="14" font-family="Inter">Bases de données & Moteurs Spatiaux</text>
+
+        <!-- Redis -->
+        <rect x="1370" y="160" width="320" height="120" rx="14" fill="#131c31" stroke="rgba(239,68,68,0.3)" stroke-width="1.5"/>
+        <text x="1395" y="195" fill="#fff" font-size="18" font-weight="700" font-family="Outfit">🔴 Cache Mémoire REDIS 7</text>
+        <text x="1395" y="225" fill="#94a3b8" font-size="13" font-family="Inter">• Cache tuiles & sessions haute vitesse</text>
+        <text x="1395" y="248" fill="#94a3b8" font-size="13" font-family="Inter">• Temps de réponse : &lt; 2 millisecondes</text>
+        <text x="1395" y="268" fill="#f87171" font-size="13" font-weight="600" font-family="Inter">✓ Éviction LRU & Persistance AOF</text>
+
+        <!-- PostGIS -->
+        <rect x="1370" y="300" width="320" height="150" rx="14" fill="#131c31" stroke="rgba(0,180,216,0.3)" stroke-width="1.5"/>
+        <text x="1395" y="335" fill="#fff" font-size="18" font-weight="700" font-family="Outfit">🗄️ POSTGRESQL 16 + POSTGIS 3.4</text>
+        <text x="1395" y="365" fill="#94a3b8" font-size="13" font-family="Inter">• Moteur spatial & index GiST</text>
+        <text x="1395" y="388" fill="#94a3b8" font-size="13" font-family="Inter">• Table providers (sources dynamiques)</text>
+        <text x="1395" y="411" fill="#94a3b8" font-size="13" font-family="Inter">• Données ménages & logs d'audit</text>
+        <text x="1395" y="434" fill="#38bdf8" font-size="13" font-weight="600" font-family="Inter">✓ Stockage vectoriel certifié OGC</text>
+
+        <!-- Prometheus & Grafana -->
+        <rect x="1370" y="470" width="320" height="150" rx="14" fill="#131c31" stroke="rgba(245,158,11,0.3)" stroke-width="1.5"/>
+        <text x="1395" y="505" fill="#fff" font-size="18" font-weight="700" font-family="Outfit">📊 MONITORING (Prometheus / Grafana)</text>
+        <text x="1395" y="535" fill="#94a3b8" font-size="13" font-family="Inter">• Métriques Prometheus v2.50 (:9090)</text>
+        <text x="1395" y="558" fill="#94a3b8" font-size="13" font-family="Inter">• Dashboards Grafana v10.3 (:3000)</text>
+        <text x="1395" y="581" fill="#94a3b8" font-size="13" font-family="Inter">• Taux de cache hit & santé conteneurs</text>
+        <text x="1395" y="604" fill="#f59e0b" font-size="13" font-weight="600" font-family="Inter">✓ Alerting & Visibilité en direct</text>
+
+      </svg>
+    </div>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Schéma d'Architecture Globale</span>
+      <span>Slide 3 / 8</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 4 : CE QUI EST OPEN SOURCE VS CE QUI EST DÉVELOPPÉ SUR-MESURE
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag"><span>🧩</span> Répartition Technologique</div>
+        <div class="slide-title">Briques Open Source vs Développements Sur-Mesure</div>
+        <div class="slide-subtitle">Une intégration pragmatique : fondations éprouvées + valeur ajoutée métier</div>
+      </div>
+      <div class="slide-logo-badge">ANALYSE ARCHITECTURE</div>
+    </div>
+
+    <table class="table-compare">
+      <thead>
+        <tr>
+          <th style="width: 28%;">Composant Système</th>
+          <th style="width: 32%;">Brique Open Source Réutilisée</th>
+          <th style="width: 40%;">Développement Spécifique Réalisé (Sur-mesure)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Passerelle API & Serveur Tuiles</td>
+          <td><span class="pill-open">Node.js 20 &bull; Express.js</span></td>
+          <td><span class="pill-custom">Code sur-mesure (tileService.js)</span> : Proxy de tuiles intelligent avec cache multi-niveaux, circuit-breaker, injection ETag/CORS.</td>
+        </tr>
+        <tr>
+          <td>Moteur de Données Spatiales</td>
+          <td><span class="pill-open">PostgreSQL 16 &bull; PostGIS 3.4</span></td>
+          <td><span class="pill-custom">Schéma SQL métier</span> : Modélisation des tables providers dynamiques, styles, custom layers, quotas et audit logs.</td>
+        </tr>
+        <tr>
+          <td>Sécurité & Authentification Tablettes</td>
+          <td><span class="pill-open">Crypto natif &bull; JWT</span></td>
+          <td><span class="pill-custom">Moteur de Tokens M2M</span> : Génération `cpt_live_...`, hachage SHA-256 en base, révocation instantanée, rate limiting dynamique.</td>
+        </tr>
+        <tr>
+          <td>Moteur de Routage & Itinéraires</td>
+          <td><span class="pill-open">OSRM (Graphe OpenStreetMap)</span></td>
+          <td><span class="pill-custom">Orchestration (routingService.js)</span> : Traduction automatique des manœuvres en français, calcul multi-modal et formatage GeoJSON.</td>
+        </tr>
+        <tr>
+          <td>Pré-chargement Offline (Tablettes)</td>
+          <td><span class="pill-open">Formules Slippy Map XYZ</span></td>
+          <td><span class="pill-custom">Moteur de Seeding (seedService.js)</span> : Conversion automatique Bounding Box GPS en grille de tuiles pour export gouvernorat.</td>
+        </tr>
+        <tr>
+          <td>Application Cliente d'Enquête</td>
+          <td><span class="pill-open">Leaflet 1.9.4 (Moteur carte)</span></td>
+          <td><span class="pill-custom">Application Standalone (app_test)</span> : Persistance IndexedDB locale, cercles de ménages dynamiques, calcul d'itinéraires en 1 clic.</td>
+        </tr>
+        <tr>
+          <td>DevOps & Déploiement Automatisé</td>
+          <td><span class="pill-open">Docker &bull; Docker Compose</span></td>
+          <td><span class="pill-custom">Scripts automatisés</span> : Déploiement en 1 commande sur Ubuntu Docker, Ubuntu Natif, et Windows Server PowerShell.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Ingénierie Logicielle</span>
+      <span>Slide 4 / 8</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 5 : LES 4 FONCTIONNALITÉS CLÉS DE LA PLATEFORME
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag"><span>⚡</span> Capacités Opérationnelles</div>
+        <div class="slide-title">Les 4 Piliers Fonctionnels de la Plateforme</div>
+        <div class="slide-subtitle">Des services géospatiaux complets pour l'institut et les équipes terrain</div>
+      </div>
+      <div class="slide-logo-badge">FONCTIONNALITÉS</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="border-left: 4px solid #00b4d8;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+          <div class="card-icon" style="background: rgba(0, 180, 216, 0.15); color: #00b4d8; margin-bottom: 0;">🗺️</div>
+          <div>
+            <div class="card-title" style="margin-bottom: 2px;">1. Service de Tuiles Multi-Sources (XYZ)</div>
+            <div style="font-size: 14px; color: #38bdf8;">Standard universel OGC / Slippy Map</div>
+          </div>
+        </div>
+        <div class="card-desc">
+          • Distribution instantanée des fonds cartographiques : <strong>Plan des Rues, Satellite HD, Relief Topographique, OSM</strong>.<br>
+          • Découplage total : Les tablettes appellent une URL unique fixe. Les sources amont sont modifiables en base de données sans impacter les agents.<br>
+          • Cache Redis automatique réduisant la charge serveur de plus de 95%.
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+          <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; margin-bottom: 0;">🧭</div>
+          <div>
+            <div class="card-title" style="margin-bottom: 2px;">2. Calculateur d'Itinéraires Intégré</div>
+            <div style="font-size: 14px; color: #fbbf24;">Navigation locale pour tournées d'enquêteurs</div>
+          </div>
+        </div>
+        <div class="card-desc">
+          • Calcul du chemin le plus court multi-modal : <strong>Voiture 🚗, Piéton 🚶, Vélo 🚴</strong>.<br>
+          • Génération d'une feuille de route pas-à-pas en français avec nom des rues et distances exactes.<br>
+          • Tracé GeoJSON LineString direct sur la carte avec estimation précise du temps de trajet.
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+          <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981; margin-bottom: 0;">📱</div>
+          <div>
+            <div class="card-title" style="margin-bottom: 2px;">3. Pré-chargement Hors-Ligne (Seeding)</div>
+            <div style="font-size: 14px; color: #34d399;">Autonomie totale en zone blanche</div>
+          </div>
+        </div>
+        <div class="card-desc">
+          • Moteur de téléchargement par zone géographique (Bounding Box gouvernorat).<br>
+          • Permet à la tablette de stocker localement ~1.5 Go de tuiles pour travailler sans aucun réseau.<br>
+          • Endpoints API dédiés : `/api/seed/start`, `/api/seed/status`, `/api/seed/purge`.
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid #8b5cf6;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+          <div class="card-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; margin-bottom: 0;">🔐</div>
+          <div>
+            <div class="card-title" style="margin-bottom: 2px;">4. Sécurité M2M & Supervision Live</div>
+            <div style="font-size: 14px; color: #a78bfa;">Gouvernance & Protection des flux</div>
+          </div>
+        </div>
+        <div class="card-desc">
+          • Authentification machine-to-machine via tokens <strong>x-api-key</strong> sécurisés (SHA-256).<br>
+          • Rate Limiting Nginx empêchant tout blocage ou déni de service.<br>
+          • Supervision en direct via <strong>Grafana & Prometheus</strong> : suivi du nombre de requêtes, latence et état de santé des conteneurs.
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Piliers Fonctionnels</span>
+      <span>Slide 5 / 8</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 6 : STRATÉGIE HORS-LIGNE & GESTION DU CACHE POUR TABLETTES
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag"><span>📱</span> Focus Mobilité Terrain</div>
+        <div class="slide-title">Stratégie Hors-Ligne & Dimensionnement du Cache Tablette</div>
+        <div class="slide-subtitle">Comment un enquêteur travaille en zone sans réseau avec 1.5 Go de cartographie locale</div>
+      </div>
+      <div class="slide-logo-badge">OFFLINE FIRST</div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Schéma du cycle de vie tablette -->
+      <div class="card" style="justify-content: space-between;">
+        <div>
+          <div class="card-title">Cycle de Vie d'une Tablette d'Enquêteur</div>
+          <div class="card-desc" style="margin-bottom: 20px;">
+            Préparation au bureau INS ➔ Mission terrain autonome ➔ Synchronisation retour.
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: rgba(2, 132, 199, 0.1); border-left: 4px solid #00b4d8; padding: 14px 18px; border-radius: 8px;">
+            <strong style="color: #fff;">1. Au Bureau INS (Connexion Wi-Fi locale)</strong><br>
+            <span style="font-size: 14px; color: #94a3b8;">La tablette lance l'application et télécharge les tuiles du gouvernorat attribué via l'API locale. Temps requis : <strong>2 à 4 minutes</strong>.</span>
+          </div>
+
+          <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 14px 18px; border-radius: 8px;">
+            <strong style="color: #fff;">2. Sur le Terrain (Zone Blanche / Zéro Réseau)</strong><br>
+            <span style="font-size: 14px; color: #94a3b8;">L'application utilise le cache local SQLite / IndexedDB. Les fonds de carte, le repérage des ménages et les calculs de distances fonctionnent à 100%.</span>
+          </div>
+
+          <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 8px;">
+            <strong style="color: #fff;">3. Retour au Bureau ou Reconnexion 4G</strong><br>
+            <span style="font-size: 14px; color: #94a3b8;">Les fiches d'enquêtes collectées sont synchronisées vers la base centrale PostgreSQL PostGIS.</span>
+          </div>
+        </div>
+
+        <div style="font-size: 13px; color: #64748b; margin-top: 10px;">
+          Format de stockage recommandé sur tablette : <strong>MBTiles</strong> (base SQLite compacte en 1 seul fichier).
+        </div>
+      </div>
+
+      <!-- Tableau dimensionnement cache -->
+      <div class="card">
+        <div class="card-title">Dimensionnement Réel du Cache par Gouvernorat</div>
+        <div class="card-desc" style="margin-bottom: 20px;">
+          Volume de stockage requis pour une couverture complète du Zoom 10 au Zoom 17 (niveau bâtiment).
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 16px; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #fff; font-size: 16px;">Petit Gouvernorat Urbain (ex: Tunis, Ariana)</strong>
+              <span style="color: #34d399; font-weight: 700; font-size: 16px;">~1.3 Go</span>
+            </div>
+            <div style="font-size: 13px; color: #94a3b8;">Superficie ~400 à 750 km² &bull; ~50 000 tuiles (Plan + Satellite HD) &bull; <strong>2% de la mémoire d'une tablette 64 Go</strong></div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 16px; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #fff; font-size: 16px;">Gouvernorat Moyen (ex: Sousse, Nabeul, Bizerte)</strong>
+              <span style="color: #38bdf8; font-weight: 700; font-size: 16px;">~4.2 Go</span>
+            </div>
+            <div style="font-size: 13px; color: #94a3b8;">Superficie ~2 500 km² &bull; ~160 000 tuiles (Plan + Satellite HD) &bull; <strong>6% de la mémoire d'une tablette 64 Go</strong></div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 16px; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #fff; font-size: 16px;">Grand Gouvernorat Étendu (ex: Sfax, Kairouan)</strong>
+              <span style="color: #fbbf24; font-weight: 700; font-size: 16px;">~3.5 Go *</span>
+            </div>
+            <div style="font-size: 13px; color: #94a3b8;">* Approche pyramide INS : Z10-Z15 sur tout le gouvernorat + Z16-Z17 sur le secteur attribué.</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 12px; background: rgba(16,185,129,0.1); border-radius: 8px; border: 1px solid rgba(16,185,129,0.3); font-size: 13px; color: #34d399;">
+          ✓ <strong>Conclusion :</strong> Sur des tablettes actuelles (32 Go ou 64 Go), le stockage cartographique ne sature jamais l'appareil.
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Ingénierie Mobile & Offline</span>
+      <span>Slide 6 / 8</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 7 : DÉMONSTRATEUR CLIENT (APP_TEST)
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="slide-header">
+      <div>
+        <div class="slide-tag"><span>💻</span> Démonstrateur Réalisé</div>
+        <div class="slide-title">L'Application Client de Test : Validation sur le Terrain</div>
+        <div class="slide-subtitle">Une application autonome simulant le comportement d'une tablette d'enquêteur</div>
+      </div>
+      <div class="slide-logo-badge">STANDALONE CLIENT</div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-icon" style="background: rgba(0, 180, 216, 0.15); color: #00b4d8;">🟢</div>
+        <div class="card-title">Cercles Thématiques Ménages</div>
+        <div class="card-desc">
+          • <strong>Code couleur par statut d'enquête</strong> :<br>
+          &nbsp;&nbsp;🟢 Recensé &bull; 🟠 À revisiter<br>
+          &nbsp;&nbsp;🔵 Absent &bull; 🔴 Refus<br><br>
+          • <strong>Rayon dynamique</strong> : Proportionnel au nombre de personnes dans le ménage.<br><br>
+          • <strong>Stockage local</strong> : Persistance dans IndexedDB (`CartoMenagesDB`) avec historique des modifications.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">⚡</div>
+        <div class="card-title">Menu d'Options au Clic</div>
+        <div class="card-desc">
+          En cliquant sur n'importe quel ménage :<br><br>
+          1. 🧭 <strong>Calcul d'itinéraire direct</strong> : Trajet calculé par l'API locale avec feuille de route.<br>
+          2. 📋 <strong>Fiche d'enquête complète</strong> : Logement, revenu, enquêteur assigné.<br>
+          3. 🏷️ <strong>Changement de statut en 1 clic</strong> avec mise à jour immédiate du cercle.<br>
+          4. 🎨 <strong>Personnalisation graphique</strong> (couleur, rayon, opacité).
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">🎲</div>
+        <div class="card-title">Génération Aléatoire de Données</div>
+        <div class="card-desc">
+          • Bouton <strong>« Générer Aléatoire »</strong> : Injection instantanée de 10 à 100 ménages et POIs de test.<br><br>
+          • <strong>Données réalistes</strong> : Noms tunisiens, adresses, tranches de revenus et coordonnées dans la zone affichée.<br><br>
+          • <strong>Export GeoJSON</strong> en 1 clic pour interopérabilité avec QGIS et ArcGIS.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 18px 24px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 24px;">🚀</span>
+        <div>
+          <strong style="color: #fff; font-size: 16px;">Application disponible immédiatement :</strong>
+          <span style="color: #94a3b8; font-size: 14px;"> Double-cliquez sur <code>app_test/index.html</code> pour lancer la démonstration.</span>
+        </div>
+      </div>
+      <span style="background: rgba(16,185,129,0.15); color: #34d399; padding: 6px 16px; border-radius: 999px; font-weight: 700; font-size: 13px;">100% FONCTIONNEL</span>
+    </div>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Démonstrateur Client</span>
+      <span>Slide 7 / 8</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SLIDE 8 : CONCLUSION & BÉNÉFICES POUR L'ÉQUIPE ET L'INS
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="slide cover-slide">
+    <div class="bg-glow-cyan"></div>
+    <div class="bg-glow-blue"></div>
+
+    <div class="cover-badge" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399;">
+      Synthèse & Valeur Ajoutée
+    </div>
+    
+    <h2 class="cover-title" style="font-size: 52px; margin-bottom: 24px;">
+      Une Infrastructure <span>Prête pour la Production</span>
+    </h2>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; width: 100%; max-width: 1400px; margin: 40px auto; text-align: left;">
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 24px; border-radius: 16px;">
+        <div style="font-size: 32px; margin-bottom: 10px;">💰</div>
+        <strong style="color: #fff; font-size: 18px; display: block; margin-bottom: 8px;">Économie Budgétaire</strong>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">Zéro redevance pour des API cartographiques payantes. Données et moteurs 100% maîtrisés en interne.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 24px; border-radius: 16px;">
+        <div style="font-size: 32px; margin-bottom: 10px;">🚀</div>
+        <strong style="color: #fff; font-size: 18px; display: block; margin-bottom: 8px;">Déploiement en 5 min</strong>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">Scripts automatisés prêts pour Linux Ubuntu et Windows Server avec initialisation automatique des bases.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 24px; border-radius: 16px;">
+        <div style="font-size: 32px; margin-bottom: 10px;">🛡️</div>
+        <strong style="color: #fff; font-size: 18px; display: block; margin-bottom: 8px;">Sécurité Maximale</strong>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">Certificats SSL durcis, hachage SHA-256 des tokens tablettes, rate limiting et traçabilité complète.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 24px; border-radius: 16px;">
+        <div style="font-size: 32px; margin-bottom: 10px;">📈</div>
+        <strong style="color: #fff; font-size: 18px; display: block; margin-bottom: 8px;">Évolutivité Prouvée</strong>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">Capacité d'intégrer des photos aériennes CNCT, des serveurs GeoServer ou des clusters PostGIS sans refonte.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 18px; color: #38bdf8; font-weight: 600;">
+      Merci pour votre attention &bull; Questions & Démonstration en direct
+    </div>
+
+    <div class="slide-footer">
+      <span>INS SIG Platform &bull; Présentation Équipe Informatique</span>
+      <span>Slide 8 / 8</span>
+    </div>
+  </section>
+
+</body>
+</html>

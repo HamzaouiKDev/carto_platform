@@ -1,0 +1,215 @@
+version: '3.8'
+
+services:
+  # ── 1. BASE DE DONNÉES SPATIALE POSTGRESQL 16 + POSTGIS 3.4 ───────────────────
+  carto-postgis:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: carto-postgis-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - carto_postgis_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 2048M
+        reservations:
+          cpus: '0.50'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - carto-internal-backend
+
+  # ── 2. MOTEUR DE CACHE REDIS 7 AVEC LRU ─────────────────────────────────────────
+  carto-redis:
+    image: redis:7-alpine
+    container_name: carto-redis-prod
+    restart: always
+    command: [
+      "redis-server",
+      "--requirepass", "${REDIS_PASSWORD}",
+      "--appendonly", "yes",
+      "--maxmemory", "1024mb",
+      "--maxmemory-policy", "allkeys-lru",
+      "--save", "",
+      "--stop-writes-on-bgsave-error", "no"
+    ]
+    volumes:
+      - carto_redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 1200M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - carto-internal-backend
+
+  # ── 3. INIT CONTAINER DE MIGRATION DE BASE DE DONNÉES ──────────────────────────
+  carto-migration:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carto-migration-prod
+    restart: "no"
+    command: ["npm", "run", "migrate"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-ins@carto2026}
+    depends_on:
+      carto-postgis:
+        condition: service_healthy
+    networks:
+      - carto-internal-backend
+
+  # ── 4. API GATEWAY HAUTE PERFORMANCE ─────────────────────────────────────────
+  carto-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carto-api-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      ESRI_API_KEY: ${ESRI_API_KEY}
+      MAPTILER_API_KEY: ${MAPTILER_API_KEY}
+      OSM_USER_AGENT: ${OSM_USER_AGENT}
+    depends_on:
+      carto-postgis:
+        condition: service_healthy
+      carto-redis:
+        condition: service_healthy
+      carto-migration:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 1024M
+        reservations:
+          cpus: '0.50'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - carto-internal-backend
+      - carto-dmz-net
+
+  # ── 5. ASYNCHRONOUS BACKGROUND WORKER ────────────────────────────────────────
+  carto-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carto-worker-prod
+    restart: always
+    command: ["npm", "run", "worker"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    depends_on:
+      carto-postgis:
+        condition: service_healthy
+      carto-redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 768M
+        reservations:
+          cpus: '0.20'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - carto-internal-backend
+
+  # ── 6. REVERSE PROXY NGINX & FRONTEND ────────────────────────────────────────
+  carto-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: carto-frontend-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      carto-api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - carto-dmz-net
+
+networks:
+  carto-internal-backend:
+    internal: true # STRICT: Cannot be reached from external host or public internet
+    driver: bridge
+  carto-dmz-net:
+    driver: bridge
+
+volumes:
+  carto_postgis_prod_data:
+  carto_redis_prod_data:

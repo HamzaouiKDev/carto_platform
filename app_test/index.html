@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INS Carto Test — Satellite, Itinéraire & Ménages Aléatoires</title>
+  
+  <!-- Polices Google Fonts (Outfit & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS (Local avec fallback CDN) -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  
+  <!-- Feuille de styles personnalisée -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Leaflet JS (Local garanti sans blocage) -->
+  <script src="vendor/leaflet/leaflet.js"></script>
+</head>
+<body>
+
+  <!-- ── 1. BARRE DE NAVIGATION SUPÉRIEURE ───────────────────────────────────── -->
+  <header class="top-navbar">
+    <div class="brand-box">
+      <span class="brand-icon">INS SIG</span>
+      <div>
+        <div class="brand-title">
+          <span>Carte Ménages & Itinéraires</span>
+          <span style="font-size: 0.68rem; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(16,185,129,0.3);">
+            Standalone
+          </span>
+        </div>
+        <div class="brand-sub">Mode test indépendant (Hors serveur plateforme)</div>
+      </div>
+    </div>
+
+    <div class="navbar-controls">
+      <!-- Bouton Géolocalisation GPS Réelle -->
+      <button class="btn btn-primary" id="btn-gps-locate" title="Acquérir ma position GPS réelle (Capteur de l'appareil)">
+        <span>📍</span>
+        <span>Position GPS</span>
+      </button>
+
+      <!-- Bouton Centrer sur Enquêteur -->
+      <button class="btn btn-secondary" id="btn-center-surveyor" title="Centrer la carte sur la position de l'enquêteur">
+        <span>🚶‍♂️</span>
+        <span>Enquêteur</span>
+      </button>
+
+      <!-- Bouton Génération Aléatoire pour tests -->
+      <button class="btn btn-amber" id="btn-random-generate" title="Générer de nouveaux points de ménages aléatoires">
+        <span>🎲</span>
+        <span>Générer Aléatoire</span>
+      </button>
+
+      <!-- Bouton Panneau Itinéraire -->
+      <button class="btn btn-itinerary" id="btn-toggle-itinerary" title="Ouvrir le calculateur d'itinéraire">
+        <span>🧭</span>
+        <span>Itinéraire</span>
+      </button>
+
+      <!-- Bouton Ajouter manuellement -->
+      <button class="btn btn-secondary" id="btn-add-point" title="Placer un point par clic sur la carte">
+        <span>➕</span>
+        <span>Ajouter Point</span>
+      </button>
+
+      <!-- Bouton Réinitialiser -->
+      <button class="btn btn-secondary" id="btn-reset-data" style="color: #fca5a5;" title="Réinitialiser avec 35 points de démo">
+        <span>🔄</span>
+        <span>Reset</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── 2. CARTE & INTERFACE FLOTTANTE ──────────────────────────────────────── -->
+  <div class="map-wrapper">
+    
+    <!-- Carte Leaflet (Plein écran) -->
+    <div id="map"></div>
+
+    <!-- ── 2.1 SÉLECTEUR DE FOND DE CARTE (100% PLATEFORME LOCALE) ────────── -->
+    <div class="basemap-switcher-card">
+      <button class="basemap-btn active" data-basemap="plan" title="Plan des Rues (Serveur Local Plateforme)">
+        <span>🗺️</span> Plan Local
+      </button>
+      <button class="basemap-btn" data-basemap="satellite" title="Satellite HD (Serveur Local Plateforme)">
+        <span>🛰️</span> Satellite Local
+      </button>
+      <button class="basemap-btn" data-basemap="topo" title="Relief Topographique (Serveur Local Plateforme)">
+        <span>⛰️</span> Topo Local
+      </button>
+      <button class="basemap-btn" data-basemap="osm" title="OSM Standard (Serveur Local Plateforme)">
+        <span>🌐</span> OSM Local
+      </button>
+    </div>
+
+    <!-- ── 2.2 PANNEAU CALCULATEUR D'ITINÉRAIRE (VOITURE / PIÉTON / VÉLO) ───── -->
+    <aside class="itinerary-panel" id="itinerary-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>🧭</span>
+          <span>Calcul d'Itinéraire</span>
+        </div>
+        <button class="btn-close" id="btn-close-itinerary" title="Fermer le panneau">✕</button>
+      </div>
+
+      <div class="panel-body">
+        
+        <!-- Sélection Départ & Arrivée -->
+        <div class="route-inputs">
+          <div class="route-point-row">
+            <span class="point-badge badge-a">A</span>
+            <input type="text" id="input-start" class="input-point" placeholder="Point de départ..." readonly>
+            <button class="btn-pick" id="btn-pick-start" title="Choisir le point A par clic sur la carte">📍 Clic</button>
+          </div>
+
+          <div class="route-point-row">
+            <span class="point-badge badge-b">B</span>
+            <input type="text" id="input-end" class="input-point" placeholder="Point d'arrivée (ou cliquez un ménage)..." readonly>
+            <button class="btn-pick" id="btn-pick-end" title="Choisir le point B par clic sur la carte">📍 Clic</button>
+          </div>
+        </div>
+
+        <!-- Mode de transport -->
+        <div class="mode-selector">
+          <button class="mode-transport-btn active" data-mode="car">🚗 Voiture</button>
+          <button class="mode-transport-btn" data-mode="foot">🚶 Piéton</button>
+          <button class="mode-transport-btn" data-mode="bike">🚴 Vélo</button>
+        </div>
+
+        <!-- Bouton Lancer Calcul -->
+        <button class="btn btn-primary" id="btn-do-calc" style="width: 100%; justify-content: center; padding: 10px;">
+          <span>🚀</span>
+          <span>Calculer l'Itinéraire</span>
+        </button>
+
+        <!-- Résumé Distance / Durée -->
+        <div class="route-summary-box" id="route-summary-box" style="display: none;">
+          <div class="summary-metric">
+            <span class="metric-label">Distance</span>
+            <span class="metric-value" id="route-dist-val">-- km</span>
+          </div>
+          <div style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
+          <div class="summary-metric">
+            <span class="metric-label">Durée Estimée</span>
+            <span class="metric-value" id="route-dur-val">-- min</span>
+          </div>
+        </div>
+
+        <!-- Liste des instructions étape par étape -->
+        <div class="route-steps-list" id="route-steps-list">
+          <div style="font-size: 0.76rem; color: var(--text-muted); text-align: center; padding: 10px 0;">
+            Sélectionnez les points A et B ou cliquez sur un ménage pour calculer le trajet.
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ── 2.3 RUBRIQUE DU MÉNAGE (AU CLIC D'UN CERCLE DE MÉNAGE OU POI) ──────── -->
+    <div class="options-flyout" id="options-flyout">
+      <div class="flyout-header">
+        <div>
+          <span class="flyout-badge" id="flyout-badge">MÉNAGE RECENSÉ</span>
+          <h3 class="flyout-title" id="flyout-title">Mohamed Ben Salah</h3>
+        </div>
+        <button class="btn-close" id="btn-close-flyout" title="Fermer la rubrique">✕</button>
+      </div>
+
+      <div class="flyout-body">
+        <div class="flyout-meta">
+          <div id="flyout-meta-1">Taille : 4 personnes</div>
+          <div id="flyout-meta-2">Statut : Recensé</div>
+          <div id="flyout-meta-3">Logement : Appartement</div>
+          <div id="flyout-meta-4">Revenu : 1500 - 3000 DT</div>
+        </div>
+
+        <!-- Indicateur de distance directe depuis l'Enquêteur Terrain -->
+        <div class="flyout-surveyor-distance" id="flyout-surveyor-dist">
+          <span>🚶‍♂️ <strong>Position Enquêteur :</strong></span>
+          <span id="flyout-dist-val" style="font-weight: 700; color: #34d399;">-- km</span>
+        </div>
+
+        <!-- Actions de la rubrique -->
+        <div class="point-actions-grid">
+          <!-- 1. Bouton Calcul d'Itinéraire (Enquêteur <-> Ménage) -->
+          <button class="action-row-btn btn-calc-primary" id="action-calc-route">
+            <span>🧭</span>
+            <span>Calculer l'itinéraire</span>
+          </button>
+
+          <!-- 2. Bouton Ouvrir Questionnaire (Inactif / En cours de développement) -->
+          <button class="action-row-btn btn-questionnaire" id="action-open-questionnaire" title="Questionnaire de recensement statistique CAPI">
+            <span>📋</span>
+            <span>Ouvrir questionnaire</span>
+            <span class="badge-disabled">Bientôt</span>
+          </button>
+          
+          <!-- 3. Définir manuellement comme point de départ -->
+          <button class="action-row-btn" id="action-set-start">
+            <span>🏁</span>
+            <span>Définir comme point A</span>
+          </button>
+
+          <!-- 4. Changer le statut du ménage -->
+          <button class="action-row-btn" id="action-change-status">
+            <span>🏷️</span>
+            <span>Changer le statut</span>
+          </button>
+
+          <!-- 5. Supprimer -->
+          <button class="action-row-btn" id="action-delete-point" style="color: #fb7185;">
+            <span>🗑️</span>
+            <span>Supprimer ce point</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2.3.1 MODAL QUESTIONNAIRE (INDICATION MODULE EN COURS) ────────────── -->
+    <div class="modal-overlay" id="modal-questionnaire-overlay">
+      <div class="modal-content">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.4rem;">📋</span>
+            <div>
+              <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;">Questionnaire CAPI Recensement</h3>
+              <div id="modal-quest-target" style="font-size: 0.75rem; color: var(--accent-cyan);">Ménage : --</div>
+            </div>
+          </div>
+          <button class="btn-close" id="btn-close-quest-modal">✕</button>
+        </div>
+
+        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+          <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 12px; color: #fde68a;">
+            ⚠️ <strong>Module en cours d'intégration :</strong><br/>
+            Le module de saisie directe du questionnaire statistique CAPI (caractéristiques socio-économiques, démographie, habitat) est actuellement en cours de finalisation pour les tablettes agents.
+          </div>
+          <div>
+            Une fois connecté au serveur, ce bouton ouvrira le formulaire dynamique synchronisé hors-ligne avec la base PostgreSQL/PostGIS.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; padding-top: 8px;">
+          <button class="btn btn-secondary" id="btn-ack-quest-modal">Compris</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2.4 LÉGENDE & COMPTEURS BAS GAUCHE ─────────────────────────────────── -->
+    <div class="bottom-legend">
+      <div class="legend-chip">
+        <span style="font-weight: 700; color: #fff;">Points : <span id="legend-total-val">0</span></span>
+      </div>
+      <div class="legend-chip">
+        <span class="chip-circle" style="background: #10B981;"></span>
+        <span>Recensés (<span id="legend-recense-val">0</span>)</span>
+      </div>
+      <div class="legend-chip">
+        <span class="chip-circle" style="background: #F59E0B;"></span>
+        <span>À revisiter (<span id="legend-revisiter-val">0</span>)</span>
+      </div>
+      <div class="legend-chip">
+        <span class="chip-circle" style="background: #0284C7;"></span>
+        <span>Services / POIs (<span id="legend-poi-val">0</span>)</span>
+      </div>
+    </div>
+
+    <!-- ── 2.5 BARRE DE COORDONNÉES GPS EN DIRECT (WGS-84) ────────────────────── -->
+    <div class="gps-coords-bar" id="gps-coords-bar" title="Coordonnées GPS WGS-84 en temps réel">
+      <div class="gps-bar-item">
+        <span class="gps-dot live"></span>
+        <span class="gps-bar-label">GPS Enquêteur :</span>
+        <span class="gps-bar-val" id="bar-surveyor-coords">36.818800° N, 10.165000° E</span>
+      </div>
+      <div class="gps-bar-sep"></div>
+      <div class="gps-bar-item">
+        <span class="gps-bar-label">Curseur :</span>
+        <span class="gps-bar-val" id="bar-cursor-coords">Survolez la carte...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- IndexedDB autonome (garanti sans blocage) -->
+  <script src="db.js"></script>
+  
+  <!-- Logique de l'application -->
+  <script src="app.js?v=2.1.0"></script>
+</body>
+</html>

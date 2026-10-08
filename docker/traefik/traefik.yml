@@ -1,0 +1,48 @@
+# ==============================================================================
+#  INS SIG PLATFORM — Configuration Traefik v3 (Production Internet HTTPS)
+#  Let's Encrypt automatique avec challenge HTTP
+# ==============================================================================
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: INFO
+
+accessLog:
+  bufferingSize: 100
+
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: carto-traefik-net
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "${ACME_EMAIL:-admin@ins.tn}"
+      storage: "/letsencrypt/acme.json"
+      httpChallenge:
+        entryPoint: web
